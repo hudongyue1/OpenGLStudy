@@ -98,15 +98,23 @@ public:
     }
 
     void setInt(const std::string &name, int value) const {
-        glUniform1i(glGetAttribLocation(ID, name.c_str()), value);
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
     }
 
     void setFloat(const std::string &name, float value) const {
-        glUniform1f(glGetAttribLocation(ID, name.c_str()), value);
+        glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     }
 
     void setUnsignedInt(const std::string &name, unsigned int value) const {
-        glUniform1i(glGetAttribLocation(ID, name.c_str()), value);
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+    }
+
+    void setFloat3(const std::string &name, float value1, float value2, float value3) {
+        glUniform3f(glGetUniformLocation(ID, name.c_str()), value1, value2, value3);
+    }
+
+    void setFloat4(const std::string &name, float value1, float value2, float value3, float value4) {
+        glUniform4f(glGetUniformLocation(ID, name.c_str()), value1, value2, value3, value4);
     }
 };
 
