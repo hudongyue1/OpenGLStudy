@@ -51,19 +51,17 @@ void processInput(GLFWwindow *window)
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
                                  "layout (location = 1) in vec3 aColor;\n"
-                                 "out vec3 ourColor;\n"
                                  "void main()\n"
                                  "{\n"
                                  "   gl_Position = vec4(aPos, 1.0);\n"
-                                 "   ourColor = aColor;\n"
                                  "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
-                                   "in vec3 ourColor;\n"
                                    "out vec4 FragColor;\n"
+                                   "uniform vec4 ourColor;\n"
                                    "void main()\n"
                                    "{\n"
-                                   "    FragColor = vec4(ourColor, 1.0f);\n"
+                                   "    FragColor = ourColor;\n"
                                    "}\0";
 
 int main() {
@@ -92,42 +90,42 @@ int main() {
         return -1;
     }
 
-//
-//    /// 1. Vertex Shader
-//    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-//    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-//    glCompileShader(vertexShader);
-//
-//    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-//    if(!success) {
-//        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-//        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\\n" << infoLog << std::endl;
-//    }
-//
-//    /// 2. Fragment Shader
-//    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-//    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-//    glCompileShader(fragmentShader);
-//
-//    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-//    if(!success) {
-//        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-//        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\\n" << infoLog << std::endl;
-//    }
-//
-//    /// 3. Shader Program Object, Link Shaders
-//    unsigned int shaderProgram = glCreateProgram();
-//    glAttachShader(shaderProgram, vertexShader);
-//    glAttachShader(shaderProgram, fragmentShader);
-//
-//    glLinkProgram(shaderProgram);
-//    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-//    if(!success) {
-//        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-//        std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\\n" << infoLog << std::endl;
-//    }
-//    glDeleteShader(vertexShader);
-//    glDeleteShader(fragmentShader);
+
+    /// 1. Vertex Shader
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if(!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\\n" << infoLog << std::endl;
+    }
+
+    /// 2. Fragment Shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if(!success) {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\\n" << infoLog << std::endl;
+    }
+
+    /// 3. Shader Program Object, Link Shaders
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\\n" << infoLog << std::endl;
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
     ///  Vertex Array Object, VAO
     unsigned int VAO, VBO, EBO;
@@ -164,7 +162,7 @@ int main() {
     // create shader program
 
 
-    Shader testShader("/Users/hudongyue/Downloads/git/OpenGLStudy/shader/testShader.vs", "/Users/hudongyue/Downloads/git/OpenGLStudy/shader/testShader.fs");
+    Shader testShader("/Users/hudongyue/Downloads/git/OpenGLStudy/shader/learnUniform.vs", "/Users/hudongyue/Downloads/git/OpenGLStudy/shader/learnUniform.fs");
 
     while(!glfwWindowShouldClose(window))
     {
@@ -175,20 +173,27 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        float timeValue = glfwGetTime();
-        float redColor = (sin(timeValue)/2.0 + 0.5f);
         testShader.use();
-        testShader.setFloat("timeValue", redColor);
+
+        double timeValue = glfwGetTime();
+        float blueColor = (sin(timeValue)/2.0 + 0.5f);
+
+        testShader.setFloat4("ourColor", 0.0f, 0.0f, blueColor, 1.0f);
 
         // draw triangles
         glBindVertexArray(VAO);
 //        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
         // check invocation and swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+    glDeleteProgram(shaderProgram);
 
     glfwTerminate();
     return 0;
