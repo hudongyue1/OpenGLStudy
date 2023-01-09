@@ -212,7 +212,7 @@ int main() {
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
-   zuo glBindVertexArray(VAO);
+    glBindVertexArray(VAO);
 
     /// Vertex Buffer Object, VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
