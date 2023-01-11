@@ -13,12 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
-
-//float vertices[] = {
-//        -0.5f, -0.5f, 0.0f,
-//        0.5f, -0.5f, 0.0f,
-//        0.0f,  0.5f, 0.0f
-//};
+#include "camera.h"
 
 float vertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -77,28 +72,14 @@ glm::vec3 cubePositions[] = {
         glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+Camera myCamera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-int success;
-char infoLog[512];
 float upAndDown = 0.2;
 
 float lastTime = 0.0f;
 float deltaTime = 0.0f;
 
 bool firstMouse = true;
-
-// camera parameters
-const float moveCameraSpeed = 0.05f;
-const float rotateSensitivity = 0.1f;
-float fov = 45.0f;
-
-// Euler angle
-float pitch = 0;
-float yaw = -90;
-float roll = 0;
 
 // record position
 float lastX = 400, lastY = 300;
@@ -110,7 +91,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void processInput(GLFWwindow *window)
 {
-    float currentMoveSpeed = moveCameraSpeed * deltaTime;
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
@@ -121,57 +101,31 @@ void processInput(GLFWwindow *window)
         upAndDown -= 0.001;
         if(upAndDown <= 0) upAndDown = 0;
     }
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        cameraPos += moveCameraSpeed * cameraFront;
-    }
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        cameraPos -= moveCameraSpeed * cameraFront;
-    }
-    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        cameraPos -= moveCameraSpeed * glm::cross(cameraFront, cameraUp);
-    }
-    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        cameraPos += moveCameraSpeed * glm::cross(cameraFront, cameraUp);
-    }
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        myCamera.ProcessKeyBoard(FORWARD, deltaTime);
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        myCamera.ProcessKeyBoard(BACKEND, deltaTime);
+    if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        myCamera.ProcessKeyBoard(LEFT, deltaTime);
+    if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        myCamera.ProcessKeyBoard(RIGHT, deltaTime);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+void mouse_callback(GLFWwindow* window, double xPos, double yPos) {
     if(firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
+        lastX = xPos;
+        lastY = yPos;
         firstMouse = false;
     }
-
-    float xOffset = xpos - lastX;
-    float yOffset = lastY - ypos; /// !!! because of z
-    lastX = xpos;
-    lastY = ypos;
-
-
-    xOffset *= rotateSensitivity;
-    yOffset *= rotateSensitivity;
-    
-    yaw += xOffset;
-    pitch += yOffset;
-    
-    if(pitch > 89.0f)
-        pitch = 89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
-    
-    glm::vec3 direction;
-    direction.x = glm::cos(glm::radians(pitch)) * glm::cos(glm::radians(yaw));
-    direction.y = glm::sin(glm::radians(pitch));
-    direction.z = glm::cos(glm::radians(pitch)) * glm::sin(glm::radians(yaw));
-    cameraFront = glm::normalize(direction);
+    float xOffset = xPos - lastX;
+    float yOffset = lastY - yPos;
+    lastX = xPos;
+    lastY = yPos;
+    myCamera.ProcessMouse(xOffset, yOffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset) {
-    fov -= (float) yOffset;
-    if(fov < 1.0f)
-        fov = 1.0f;
-    if(fov > 45.0f)
-        fov = 45.0f;
+    myCamera.ProcessScroll(yOffset);
 }
 
 int main() {
@@ -261,8 +215,7 @@ int main() {
 
     stbi_set_flip_vertically_on_load(true);
     data = stbi_load("/Users/hudongyue/Downloads/git/OpenGLStudy/source/awesomeface.png", &width, &height, &nrChannels, 0);
-    if (data)
-    {
+    if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     } else {
@@ -288,8 +241,7 @@ int main() {
     // open z-buffer
     glEnable(GL_DEPTH_TEST);
 
-    while(!glfwWindowShouldClose(window))
-    {
+    while(!glfwWindowShouldClose(window)) {
         // input
         processInput(window);
 
@@ -311,11 +263,10 @@ int main() {
             float angle = 20.f * i;
             model = glm::translate(model, cubePositions[i]);
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.1f, 0.5f));
-            glm::mat4 view = glm::mat4(1.0f);
-            view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+            glm::mat4 view = myCamera.GetViewMatrix();
 //            view = glm::translate(view, glm::vec3(0, 0, -3));
             glm::mat4 projection = glm::mat4(1.0f);
-            projection = glm::perspective(glm::radians(fov), 500.0f/500.0f, 0.1f, 100.0f);
+            projection = glm::perspective(glm::radians(myCamera.Fov), 500.0f/500.0f, 0.1f, 100.0f);
             glUniformMatrix4fv(glGetUniformLocation(testShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(glGetUniformLocation(testShader.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
             glUniformMatrix4fv(glGetUniformLocation(testShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
