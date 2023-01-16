@@ -60,6 +60,19 @@ float vertices[] = {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 };
 
+glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+};
+
 Camera myCamera(glm::vec3(0.0f, 0.0f, 7.0f));
 
 // lighting
@@ -242,12 +255,27 @@ int main() {
 
         // draw triangles
         testShader1.use();
+
         testShader1.setFloat3("viewPosition", myCamera.Position.x, myCamera.Position.y, myCamera.Position.z);
-        testShader1.setFloat3("light.position", lightPos.x, lightPos.y, lightPos.z);
+
+
+        /// distance light and point light
+//        testShader1.setFloat4("light.DirOrPos", lightPos.x, lightPos.y, lightPos.z, 1.0f);
+//
+        /// spot light
+        testShader1.setFloat3("light.position", myCamera.Position.x, myCamera.Position.y, myCamera.Position.z);
+        testShader1.setFloat3("light.direction", myCamera.Front.x, myCamera.Front.y, myCamera.Front.z);
+        testShader1.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+        testShader1.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
 
         testShader1.setFloat3("light.ambient", 0.2f, 0.2f, 0.2f);
         testShader1.setFloat3("light.diffuse", 0.5f, 0.5f, 0.5f); // darken diffuse light a bit
         testShader1.setFloat3("light.specular", 1.0f, 1.0f, 1.0f);
+
+        // attenuation
+        testShader1.setFloat("light.constant", 1.0f);
+        testShader1.setFloat("light.linear", 0.09f);
+        testShader1.setFloat("light.quadratic", 0.032f);
 
         testShader1.setInt("material.diffuse", 0);
         testShader1.setInt("material.specular", 1);
@@ -260,7 +288,6 @@ int main() {
         glm::mat4 view = myCamera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(myCamera.Fov), 500.0f/500.0f, 0.1f, 100.0f);
 
-        glUniformMatrix4fv(glGetUniformLocation(testShader1.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(testShader1.ID, "view"), 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(glGetUniformLocation(testShader1.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -271,7 +298,17 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for(unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            glUniformMatrix4fv(glGetUniformLocation(testShader1.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
 
 
         glm::mat4 transform;
